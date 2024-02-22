@@ -5,7 +5,7 @@ library(tidyverse)
 #read in raw data and rename cols to id sire and dam
 #sealice.txt has parents with conflcts
 #YC24_idaho.txt has no parent conflicts but the ids to search for are from this dataset
-raw_ped = read.table("sealice.txt", header = T) %>%
+raw_ped = read_table("/Users/aja294-admin/Library/CloudStorage/Box-Box/aja294_box/salmonoids/trout/kin_calc-app/Data/sealice.txt") %>%
   rename(id =1, sire =2, dam =3) %>%
   mutate(id = as.factor(id),
          sire = as.factor(sire),
@@ -45,9 +45,6 @@ ready_ped <-with(nodup_ped, fixParents(id, sire, dam, sex, missid="0"))
 #create a pedigree object
 final_ped <- with(ready_ped, pedigree(id, dadid, momid,sex, missid="0"))
 
-
-#calculate kinship matrix
-kinship_matrix = kinship(final_ped). #check Amatrix
 
 # Make lists of males and females
 males <- ready_ped %>%
