@@ -45,6 +45,8 @@ ready_ped <-with(nodup_ped, fixParents(id, sire, dam, sex, missid="0"))
 #create a pedigree object
 final_ped <- with(ready_ped, pedigree(id, dadid, momid,sex, missid="0"))
 
+#calculate kinship matrix
+kinship_matrix <- kinship(final_ped) #check Amatrix
 
 # Make lists of males and females
 males <- ready_ped %>%
@@ -56,17 +58,10 @@ females <- ready_ped %>%
   pull(id)
 
 # Input ids to print
-ids_to_select <- c("3DD.003D58661E_2018",
-                   "3DD.003D586631_2018",
-                   "3DD.003D58666E_2020",
-                   "3DD.003D586683_2020",
-                   "3DD.003D586691_2020",
-                   "3DD.003D58669A_2020",
-                   "3DD.003D5866AB_2020",
-                   "3DD.003D5866AD_2020",
-                   "3DD.003D5866B0_2020",
-                   "3DD.003D5866B4_2020",
-                   "3DD.003D5866BF_2020")
+ids_to_select <- read_csv("/Users/aja294-admin/Library/CloudStorage/Box-Box/aja294_box/salmonoids/trout/kin_calc-app/Data/parents.csv", col_names = FALSE) %>%
+      select(1) %>%
+      pull() %>%
+      as.character()
 
 # Assign ids entered to males and females
 males_to_select <- ids_to_select[ids_to_select %in% males]

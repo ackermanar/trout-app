@@ -8,35 +8,30 @@ ui <- fluidPage(
   titlePanel("Pedigree Kinship Calculator"),
   sidebarLayout(
     sidebarPanel(
-      h3("Select the raw pedigree file."),
-      fileInput("file", "Choose pedigree file, e.g. 'sealice.txt.'",
+      fileInput("file1", "Choose pedigree file, e.g. 'sealice.txt.'",
                 accept = ".txt"),
-      checkboxInput("checkbox", "Upload a file with available parents?"),
-      conditionalPanel(
-        condition = "input.checkbox == true",
-        fileInput("file2", "Upload available parents in csv format", accept = c(".txt", ".csv"))),
+      br(),
+      fileInput("file2", "Upload available parents in csv format", accept = c(".csv")),
       br(),
       downloadButton("download", label = "Download")
     ),
     mainPanel(
-      p("Males:"),
+      h3("Parents:"),
       verbatimTextOutput("text1"),
-      p("Females"),
-      verbatimTextOutput("text2"),
-      DTOutput("tbl")
+      tableOutput("matrix")
     )
   )
 )
 
 server <- function(input, output, session) { # nolint
   observe({
-    file <- input$file
-    req(file)
-    raw_ped <- read_table(file$datapath) %>%
+    file1 <- input$file1
+    req(file1)
+    raw_ped <- read_table(file1$datapath) %>%
       rename(id = 1, sire = 2, dam = 3) %>%
       mutate(id = as.factor(id),
-         sire = as.factor(sire),
-         dam = as.factor(dam)
+        sire = as.factor(sire),
+        dam = as.factor(dam)
       )
 
     sex_ped <- raw_ped %>%
@@ -81,22 +76,17 @@ server <- function(input, output, session) { # nolint
       filter(sex == 2) %>%
       pull(id)
 
-    # Render tbl
-    output$tbl <- renderDT(ready_ped, server = TRUE,
-                           selection = list(mode = "multiple", target = "row"))
+    file2 <- input$file2
+    req(input$file2)
+
+    ids_to_select <- read_csv("/Users/aja294-admin/Library/CloudStorage/Box-Box/aja294_box/salmonoids/trout/kin_calc-app/Data/parents.csv", col_names = FALSE) %>%
+      select(1) %>%
+      pull() %>%
+      as.character()
 
     output$text1 <- renderPrint({
-    paste(ready_ped[input$tbl_rows_selected, 1],
-          sep = ", ")
+      paste(ids_to_select)
     })
-
-    output$text2 <- renderPrint({
-      paste(ready_ped[input$tbl_rows_selected, 1],
-            sep = ", ")
-    })
-
-    # Input ids to print
-    ids_to_select <- c(ready_ped[input$tbl_rows_selected,1], sep = ", ")
 
     # Assign ids entered to males and females
     males_to_select <- ids_to_select[ids_to_select %in% males]
@@ -105,8 +95,12 @@ server <- function(input, output, session) { # nolint
     # Select rows and columns based on the list of ids
     selected_matrix <- kinship_matrix[males_to_select, females_to_select]
     
+    # Render tbl
+    output$matrix <- renderTable({
+      selected_matrix
+    }, rownames = TRUE)
 
-    output$downloadData <- downloadHandler(
+    output$download <- downloadHandler(
       filename = function() {
       paste0("kinship_matrix-", Sys.Date(), ".csv")
     },
@@ -115,6 +109,6 @@ server <- function(input, output, session) { # nolint
     }
   )
   }) %>%
-  bindEvent(input$file, input$download)
+  bindEvent(input$file1, input$file2, input$download)
 }
 shinyApp(ui, server)
