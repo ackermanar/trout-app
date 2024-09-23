@@ -79,7 +79,7 @@ server <- function(input, output, session) { # nolint
     file2 <- input$file2
     req(input$file2)
 
-    ids_to_select <- read_csv("/Users/aja294-admin/Library/CloudStorage/Box-Box/aja294_box/salmonoids/trout/kin_calc-app/Data/parents.csv", col_names = FALSE) %>%
+    ids_to_select <- read_csv(file2$datapath, col_names = FALSE) %>%
       select(1) %>%
       pull() %>%
       as.character()
