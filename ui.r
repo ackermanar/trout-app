@@ -39,21 +39,12 @@ ui <- fluidPage(
       downloadButton("download", label = "Download")
     ),
     mainPanel(
-      tabsetPanel(
-        tabPanel("Parents",
-          h5("User feedback:"),
+          h5("User feedback for calclulating kinship:"),
           verbatimTextOutput("message1"),
+          h5("User feedback for calclulating EBVs:"),
+          verbatimTextOutput("message2"),
           DTOutput("quadrants_table"),
           DTOutput("matrix")
-        ),
-        tabPanel("EBVs",
-          h5("User feedback:"),
-          verbatimTextOutput("message2"),
-          verbatimTextOutput("weightText1"),
-          verbatimTextOutput("weightText2"),
-          tableOutput("matrix2")
-        )
-      )
     )
   )
 )
