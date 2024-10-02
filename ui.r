@@ -30,10 +30,10 @@ ui <- fluidPage(
       fileInput("pedigree_file", "Choose pedigree file, e.g. 'even_year_ped.txt'",
                 accept = ".txt"),
       h4("Calculate EBVs"),
-      fileInput("weight_file", "Upload weights", accept = c(".csv", ".txt")),
+      fileInput("weight_file", "Upload EBVs for weights", accept = c(".csv", ".txt")),
       numericInput("weight1", "EBV weight for fish weight:", 0.5, min = 0, max = 1, step = 0.1),
       verbatimTextOutput("weight1"),
-      fileInput("length_file", "Upload length", accept = c(".csv", ".txt")),
+      fileInput("length_file", "Upload EBVs for length", accept = c(".csv", ".txt")),
       numericInput("weight2", "EBV weight for fish length:", 0.5, min = 0, max = 1, step = 0.1),
       h4("Download results"),
       downloadButton("download", label = "Download")
