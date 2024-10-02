@@ -125,7 +125,8 @@ server <- function(input, output, session) { # nolint
         rownames(selected_matrix) <- paste("male", rownames(selected_matrix), sep = "_")
         colnames(selected_matrix) <- paste("female", colnames(selected_matrix), sep = "_")
       
-        quantiles_list <- list(
+        quantilesKinship <- list(
+          Data = "Kinship",
           Q25 = quantile(selected_matrix, 0.25),
           Q50 = quantile(selected_matrix, 0.50),
           Q75 = quantile(selected_matrix, 0.75),
@@ -133,24 +134,32 @@ server <- function(input, output, session) { # nolint
         )
 
         # Convert the list of quantiles to a tibble column
-        quadrants <- as_tibble(quantiles_list)
+        quadrants <- as_tibble(quantilesKinship) %>%
+          column_to_rownames(var = "Data")
 
         output$quadrants_table <- renderDT({
           datatable(quadrants,
                     options = list(ordering = FALSE, dom = 't'),
-                    rownames = FALSE) %>%
-          formatStyle(
-            columns = names(quadrants),
-            backgroundColor = styleInterval(
-              c(quantile(unlist(quadrants), 0.25),
-                quantile(unlist(quadrants), 0.50),
-                quantile(unlist(quadrants), 0.75)),
-              c('green', 'yellow', 'orange', 'red')  # Four colors for three intervals
+                    rownames = TRUE) %>%
+            formatStyle(
+              'Q25',
+              backgroundColor = 'lightgreen'
+            ) %>%
+            formatStyle(
+              'Q50',
+              backgroundColor = 'yellow'
+            ) %>%
+            formatStyle(
+              'Q75',
+              backgroundColor = 'orange'
+            ) %>%
+            formatStyle(
+              'Q100',
+              backgroundColor = 'coral'
             )
-          )
         })
 
-        kinMat<- as_tibble(selected_matrix, rownames = "Row") %>%
+        results<- as_tibble(selected_matrix, rownames = "Row") %>%
           pivot_longer(-Row, names_to = "Female", values_to = "Kinship") %>%
           select(Female, Row, Kinship) %>%
           rename(Male = Row) %>%
@@ -158,18 +167,20 @@ server <- function(input, output, session) { # nolint
 
         # Render tbl
         output$matrix <- renderDT({
-          datatable(kinMat, rownames = TRUE) %>%
+          datatable(results, rownames = TRUE) %>%
             formatStyle(
               'Kinship',
               backgroundColor = styleInterval(
-                c(quantile(kinMat$Kinship, 0.25),
-                  quantile(kinMat$Kinship, 0.50),
-                  quantile(kinMat$Kinship, 0.75)),
-                c('green', 'yellow', 'orange', 'red')  # Four colors for three intervals
+                c(
+                  quantilesKinship$Q25[[1]],
+                  quantilesKinship$Q50[[1]],
+                  quantilesKinship$Q75[[1]]
+                ),
+                c('lightgreen', 'yellow', 'orange', 'coral')  # Four colors for three intervals
               )
             )
         })
-        if(!is.null(kinMat)) {
+        if(!is.null(results)) {
           output$message1 <- renderText({
             paste("Kinship matrix generated succesfully.")
           })
@@ -228,31 +239,20 @@ server <- function(input, output, session) { # nolint
         return(joint_ebvs)
         }
 
-        output$weightText1 <- renderText({
-        paste("EBV weight for fish weight:", input$weight1)
-        })
-
-        output$weightText2 <- renderText({
-        paste("EBV weight for fish length:", input$weight2)
-        })
-
         weight_length_index <- calculate_index(weight_ebvs, input$weight1, length_ebvs, input$weight2)
 
         # subset EBVs to those of candidates only and by sex
         candidate_ebvs <- candidates %>%
-            left_join(weight_length_index, by = c("id" = "ID")) %>%
-        select(c(1,2,5))
+          left_join(weight_length_index, by = c("id" = "ID")) %>%
+          select(c(1,2,5))
 
         male_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% males_to_select, ] %>% 
-        select(c(1,3)) %>%
-        mutate(
-            id = paste("male", id, sep = "_")
-        )
+          select(c(1,3)) %>%
+          mutate(id = paste("male", id, sep = "_"))
+
         female_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% females_to_select, ] %>% 
-        select(c(1,3)) %>%
-        mutate(
-            id = paste("female", id, sep = "_")
-        )
+          select(c(1,3)) %>%
+          mutate(id = paste("female", id, sep = "_"))
 
         # make matrix of EBVs
         # Initialize an empty matrix
@@ -266,9 +266,79 @@ server <- function(input, output, session) { # nolint
             ebv_matrix[i, j] <- round(mean(c(male_candidate_ebvs$index_val[i], female_candidate_ebvs$index_val[j])),2)
         }
         }
-        output$matrix2 <- renderTable({
-            ebv_matrix
-        }, rownames = TRUE)
+
+        # Calculate quantiles for the EBV matrix
+        quantilesEBV <- list(
+          Data = "EBV",
+          Q25 = quantile(ebv_matrix, 1.00),
+          Q50 = quantile(ebv_matrix, 0.70),
+          Q75 = quantile(ebv_matrix, 0.50),
+          Q100 = quantile(ebv_matrix, 0.25)
+        )
+
+        # Convert the list of quantiles to a tibble column
+        quadrants <- as_tibble(quantilesEBV) %>%
+          column_to_rownames(var = "Data") %>%
+          bind_rows(quadrants) %>%
+           rownames_to_column(var = "Data") %>%
+          arrange(desc(Data == "Kinship"), Data) %>%
+          column_to_rownames(var = "Data")
+
+        # Render full quantile summary with formatting
+       output$quadrants_table <- renderDT({
+        datatable(quadrants,
+                  options = list(ordering = FALSE, dom = 't'),
+                  rownames = TRUE) %>%
+          formatStyle(
+            'Q25',
+            backgroundColor = 'lightgreen'
+          ) %>%
+          formatStyle(
+            'Q50',
+            backgroundColor = 'yellow'
+          ) %>%
+          formatStyle(
+            'Q75',
+            backgroundColor = 'orange'
+          ) %>%
+          formatStyle(
+            'Q100',
+            backgroundColor = 'coral'
+          )
+      })
+
+        results <- as_tibble(ebv_matrix, rownames = "Row") %>%
+          pivot_longer(-Row, names_to = "Female", values_to = "EBV") %>%
+          rename(Male = Row) %>%
+          left_join(results, by = c("Female", "Male")) %>%
+          select(Female, Male, Kinship, EBV) %>%
+          arrange(Kinship, desc(EBV))
+
+        output$matrix <- renderDT({
+          datatable(results, rownames = TRUE) %>%
+            formatStyle(
+              'Kinship',
+              backgroundColor = styleInterval(
+                c(
+                  quantilesKinship$Q25[[1]],
+                  quantilesKinship$Q50[[1]],
+                  quantilesKinship$Q75[[1]]
+                ),
+                c('lightgreen', 'yellow', 'orange', 'coral')  # Four colors for three intervals
+              )
+            ) %>%
+            formatStyle(
+              'EBV',
+              backgroundColor = styleInterval(
+                c(
+                  quantilesEBV$Q100[[1]],
+                  quantilesEBV$Q75[[1]],
+                  quantilesEBV$Q50[[1]]
+                ),
+                c('coral', 'orange', 'yellow', 'lightgreen')  # Four colors for three intervals
+               )
+            )
+        })
         if (testTot != 1 && !is.null(ebv_matrix)) {
           output$message2 <- renderText({
             paste("Warning: EBV weights are not equal to 1, current value:", testTot)
@@ -277,7 +347,7 @@ server <- function(input, output, session) { # nolint
           output$message2 <- renderText({
             paste("EBV matrix generated succesfully.")
           })
-        } 
+        }
       } , error = function(e) {
         output$message2 <- renderText({
           paste("An error occurred:", e$message)
@@ -291,18 +361,10 @@ server <- function(input, output, session) { # nolint
       },
       content = function(file) {
       wb <- createWorkbook()
-      if(!is.null(selected_matrix)) {
       # Add a worksheet for the selected matrix
-      addWorksheet(wb, "Kinship Matrix")
-      writeData(wb, sheet = "Kinship Matrix", selected_matrix, rowNames = TRUE)
-      }
-      if(!is.null(ebv_matrix)) {
-      # Add a worksheet for the ebv matrix
-      addWorksheet(wb, "EBV Matrix")
-      writeData(wb, sheet = "EBV Matrix", ebv_matrix, rowNames = TRUE)
-      }
-      # Save the workbook to a file
-      saveWorkbook(wb, file, overwrite = TRUE)
+        addWorksheet(wb, "Mate Selection")
+        writeData(wb, sheet = "Mate Selection", results, rowNames = TRUE)
+        saveWorkbook(wb, file, overwrite = TRUE)
       }
     )
   }) %>%
