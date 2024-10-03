@@ -135,7 +135,8 @@ server <- function(input, output, session) { # nolint
 
         # Convert the list of quantiles to a tibble column
         quadrants <- as_tibble(quantilesKinship) %>%
-          column_to_rownames(var = "Data")
+          column_to_rownames(var = "Data") %>%
+          mutate(across(everything(), round, 3))
 
         output$quadrants_table <- renderDT({
           datatable(quadrants,
@@ -282,7 +283,8 @@ server <- function(input, output, session) { # nolint
           bind_rows(quadrants) %>%
           rownames_to_column(var = "Data") %>%
           arrange(desc(Data == "Kinship"), Data) %>%
-          column_to_rownames(var = "Data")
+          column_to_rownames(var = "Data") %>%
+          mutate(across(everything(), round, 3))
 
         # Render full quantile summary with formatting
         output$quadrants_table <- renderDT({
