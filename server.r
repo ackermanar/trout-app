@@ -164,7 +164,8 @@ server <- function(input, output, session) { # nolint
           pivot_longer(-Row, names_to = "Female", values_to = "Kinship") %>%
           select(Female, Row, Kinship) %>%
           rename(Male = Row) %>%
-          arrange(Kinship)
+          arrange(Kinship) %>%
+          mutate(Kinship = round(Kinship, 3))
 
         # Render tbl
         output$matrix <- renderDT({
