@@ -280,39 +280,40 @@ server <- function(input, output, session) { # nolint
         quadrants <- as_tibble(quantilesEBV) %>%
           column_to_rownames(var = "Data") %>%
           bind_rows(quadrants) %>%
-           rownames_to_column(var = "Data") %>%
+          rownames_to_column(var = "Data") %>%
           arrange(desc(Data == "Kinship"), Data) %>%
           column_to_rownames(var = "Data")
 
         # Render full quantile summary with formatting
-       output$quadrants_table <- renderDT({
-        datatable(quadrants,
-                  options = list(ordering = FALSE, dom = 't'),
-                  rownames = TRUE) %>%
-          formatStyle(
-            'Q25',
-            backgroundColor = 'lightgreen'
-          ) %>%
-          formatStyle(
-            'Q50',
-            backgroundColor = 'yellow'
-          ) %>%
-          formatStyle(
-            'Q75',
-            backgroundColor = 'orange'
-          ) %>%
-          formatStyle(
-            'Q100',
-            backgroundColor = 'coral'
-          )
-      })
+        output$quadrants_table <- renderDT({
+          datatable(quadrants,
+                    options = list(ordering = FALSE, dom = 't'),
+                    rownames = TRUE) %>%
+            formatStyle(
+              'Q25',
+              backgroundColor = 'lightgreen'
+            ) %>%
+            formatStyle(
+              'Q50',
+              backgroundColor = 'yellow'
+            ) %>%
+            formatStyle(
+              'Q75',
+              backgroundColor = 'orange'
+            ) %>%
+            formatStyle(
+              'Q100',
+              backgroundColor = 'coral'
+            )
+        })
 
         results <- as_tibble(ebv_matrix, rownames = "Row") %>%
           pivot_longer(-Row, names_to = "Female", values_to = "EBV") %>%
           rename(Male = Row) %>%
           left_join(results, by = c("Female", "Male")) %>%
           select(Female, Male, Kinship, EBV) %>%
-          arrange(Kinship, desc(EBV))
+          arrange(Kinship, desc(EBV)) %>%
+          mutate(Kinship = round(Kinship, 3), EBV = round(EBV, 3))
 
         output$matrix <- renderDT({
           datatable(results, rownames = TRUE) %>%
