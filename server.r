@@ -160,7 +160,7 @@ server <- function(input, output, session) { # nolint
             )
         })
 
-        results<- as_tibble(selected_matrix, rownames = "Row") %>%
+        results <- as_tibble(selected_matrix, rownames = "Row") %>%
           pivot_longer(-Row, names_to = "Female", values_to = "Kinship") %>%
           select(Female, Row, Kinship) %>%
           rename(Male = Row) %>%
