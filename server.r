@@ -135,8 +135,7 @@ server <- function(input, output, session) { # nolint
 
         # Convert the list of quantiles to a tibble column
         quadrants <- as_tibble(quantilesKinship) %>%
-          column_to_rownames(var = "Data") %>%
-          mutate(across(everything(), round, 3))
+          column_to_rownames(var = "Data")
 
         output$quadrants_table <- renderDT({
           datatable(quadrants,
@@ -164,8 +163,7 @@ server <- function(input, output, session) { # nolint
           pivot_longer(-Row, names_to = "Female", values_to = "Kinship") %>%
           select(Female, Row, Kinship) %>%
           rename(Male = Row) %>%
-          arrange(Kinship) %>%
-          mutate(Kinship = round(Kinship, 3))
+          arrange(Kinship)
 
         # Render tbl
         output$matrix <- renderDT({
@@ -282,33 +280,32 @@ server <- function(input, output, session) { # nolint
         quadrants <- as_tibble(quantilesEBV) %>%
           column_to_rownames(var = "Data") %>%
           bind_rows(quadrants) %>%
-          rownames_to_column(var = "Data") %>%
+           rownames_to_column(var = "Data") %>%
           arrange(desc(Data == "Kinship"), Data) %>%
-          column_to_rownames(var = "Data") %>%
-          mutate(across(everything(), round, 3))
+          column_to_rownames(var = "Data")
 
         # Render full quantile summary with formatting
-        output$quadrants_table <- renderDT({
-          datatable(quadrants,
-                    options = list(ordering = FALSE, dom = 't'),
-                    rownames = TRUE) %>%
-            formatStyle(
-              'Q25',
-              backgroundColor = 'lightgreen'
-            ) %>%
-            formatStyle(
-              'Q50',
-              backgroundColor = 'yellow'
-            ) %>%
-            formatStyle(
-              'Q75',
-              backgroundColor = 'orange'
-            ) %>%
-            formatStyle(
-              'Q100',
-              backgroundColor = 'coral'
-            )
-        })
+       output$quadrants_table <- renderDT({
+        datatable(quadrants,
+                  options = list(ordering = FALSE, dom = 't'),
+                  rownames = TRUE) %>%
+          formatStyle(
+            'Q25',
+            backgroundColor = 'lightgreen'
+          ) %>%
+          formatStyle(
+            'Q50',
+            backgroundColor = 'yellow'
+          ) %>%
+          formatStyle(
+            'Q75',
+            backgroundColor = 'orange'
+          ) %>%
+          formatStyle(
+            'Q100',
+            backgroundColor = 'coral'
+          )
+      })
 
         results <- as_tibble(ebv_matrix, rownames = "Row") %>%
           pivot_longer(-Row, names_to = "Female", values_to = "EBV") %>%
@@ -316,7 +313,7 @@ server <- function(input, output, session) { # nolint
           left_join(results, by = c("Female", "Male")) %>%
           select(Female, Male, Kinship, EBV) %>%
           arrange(Kinship, desc(EBV)) %>%
-          mutate(Kinship = round(Kinship, 3), EBV = round(EBV, 3))
+          filter(Kinship < input$thresh & EBV > 0)
 
         output$matrix <- renderDT({
           datatable(results, rownames = TRUE) %>%
@@ -372,5 +369,5 @@ server <- function(input, output, session) { # nolint
       }
     )
   }) %>%
-      bindEvent(input$pedigree_file, input$candidate_file, input$download, input$weight_file, input$weight1, input$length_file, input$weight2)
+      bindEvent(input$pedigree_file, input$candidate_file, input$thresh, input$download, input$weight_file, input$weight1, input$length_file, input$weight2)
 }

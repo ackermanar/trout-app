@@ -24,8 +24,8 @@ ui <- fluidPage(
   titlePanel("Trout app"),
   sidebarLayout(
     sidebarPanel(
-      h4("Upload candidate mates"),
-      fileInput("candidate_file", "Upload candidate parents in csv format", accept = c(".csv", ".txt")),
+      h3("Generate EBV matrix and filter with designated kinship coefficient"),
+      fileInput("candidate_file", "Upload candidate mates in csv format", accept = c(".csv", ".txt")),
       h4("Calculate kinship matrix"),
       fileInput("pedigree_file", "Choose pedigree file, e.g. 'even_year_ped.txt'",
                 accept = ".txt"),
@@ -35,16 +35,18 @@ ui <- fluidPage(
       verbatimTextOutput("weight1"),
       fileInput("length_file", "Upload EBVs for length", accept = c(".csv", ".txt")),
       numericInput("weight2", "EBV weight for fish length:", 0.5, min = 0, max = 1, step = 0.1),
-      h4("Download results"),
+      h4("Select level to threshold Kinship"),
+      numericInput("thresh", "Threshold to filter kinship:", 1, min = 0, max = 1, step = 0.1),
+      h3("Export results"),
       downloadButton("download", label = "Download")
     ),
     mainPanel(
-          h5("User feedback for calclulating kinship:"),
-          verbatimTextOutput("message1"),
-          h5("User feedback for calclulating EBVs:"),
-          verbatimTextOutput("message2"),
-          DTOutput("quadrants_table"),
-          DTOutput("matrix")
+      h5("User feedback for calclulating kinship:"),
+      verbatimTextOutput("message1"),
+      h5("User feedback for calclulating EBVs:"),
+      verbatimTextOutput("message2"),
+      DTOutput("quadrants_table"),
+      DTOutput("matrix")
     )
   )
 )
