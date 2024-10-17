@@ -312,11 +312,13 @@ server <- function(input, output, session) { # nolint
           rename(Male = Row) %>%
           left_join(results, by = c("Female", "Male")) %>%
           select(Female, Male, Kinship, EBV) %>%
-          arrange(Kinship, desc(EBV)) %>%
+          arrange(Kinship, desc(EBV))
+
+        filtered_results <- results %>%
           filter(Kinship < input$thresh & EBV > 0)
 
         output$matrix <- renderDT({
-          datatable(results, rownames = TRUE) %>%
+          datatable(filtered_results, rownames = TRUE) %>%
             formatStyle(
               'Kinship',
               backgroundColor = styleInterval(
@@ -340,6 +342,17 @@ server <- function(input, output, session) { # nolint
                )
             )
         })
+
+        matDL <- results %>%
+          mutate(EBV = case_when(
+                                  Kinship > input$thresh | EBV < 0 ~ NA_real_,
+                                  .default = EBV)
+          ) %>%
+          select(Female, Male, EBV) %>%
+          pivot_wider(names_from = Female, values_from = EBV) %>%
+          column_to_rownames(var = "Male") %>%
+          as.matrix(.)
+
         if (testTot != 1 && !is.null(ebv_matrix)) {
           output$message2 <- renderText({
             paste("Warning: EBV weights are not equal to 1, current value:", testTot)
@@ -356,15 +369,22 @@ server <- function(input, output, session) { # nolint
       })
     }
 
-  output$download <- downloadHandler(
+    output$download <- downloadHandler(
       filename = function() {
-      paste0("trout_app_results-", Sys.Date(), ".xlsx")
+        paste0("trout_app_results-", Sys.Date(), ".xlsx")
       },
       content = function(file) {
-      wb <- createWorkbook()
-      # Add a worksheet for the selected matrix
+        wb <- createWorkbook()
+
+        # Add a worksheet for the selected matrix
         addWorksheet(wb, "Mate Selection")
         writeData(wb, sheet = "Mate Selection", results, rowNames = TRUE)
+
+        # Add a worksheet for the matrix
+        addWorksheet(wb, "EBV Matrix")
+        writeData(wb, sheet = "EBV Matrix", matDL, rowNames = TRUE)
+
+        # Save the workbook
         saveWorkbook(wb, file, overwrite = TRUE)
       }
     )
