@@ -247,12 +247,10 @@ server <- function(input, output, session) { # nolint
           select(c(1,2,5))
 
         male_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% males_to_select, ] %>% 
-          select(c(1,3)) %>%
-          mutate(id = paste("male", id, sep = "_"))
+          select(c(1,3))
 
         female_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% females_to_select, ] %>% 
-          select(c(1,3)) %>%
-          mutate(id = paste("female", id, sep = "_"))
+          select(c(1,3))
 
         # make matrix of EBVs
         # Initialize an empty matrix
