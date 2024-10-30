@@ -120,10 +120,6 @@ server <- function(input, output, session) { # nolint
 
         # Select rows and columns based on the list of ids
         selected_matrix <- kinship_matrix[males_to_select, females_to_select]
-
-        # Add labels to the rows and columns
-        rownames(selected_matrix) <- paste("male", rownames(selected_matrix), sep = "_")
-        colnames(selected_matrix) <- paste("female", colnames(selected_matrix), sep = "_")
       
         quantilesKinship <- list(
           Data = "Kinship",
@@ -247,12 +243,10 @@ server <- function(input, output, session) { # nolint
           select(c(1,2,5))
 
         male_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% males_to_select, ] %>% 
-          select(c(1,3)) %>%
-          mutate(id = paste("male", id, sep = "_"))
+          select(c(1,3)) 
 
         female_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% females_to_select, ] %>% 
-          select(c(1,3)) %>%
-          mutate(id = paste("female", id, sep = "_"))
+          select(c(1,3)) 
 
         # make matrix of EBVs
         # Initialize an empty matrix
