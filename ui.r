@@ -26,6 +26,7 @@ ui <- fluidPage(
     sidebarPanel(
       h3("Generate EBV matrix and filter with designated kinship coefficient"),
       fileInput("candidate_file", "Upload candidate mates in csv format", accept = c(".csv", ".txt")),
+      fileInput("running_spawners", "Optional: Upload running spawner list to track number of time each family has been used", accept = c(".csv", ".txt")), 
       h4("Calculate kinship matrix"),
       fileInput("pedigree_file", "Choose pedigree file, e.g. 'even_year_ped.txt'",
                 accept = ".txt"),

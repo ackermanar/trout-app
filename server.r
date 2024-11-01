@@ -18,7 +18,7 @@ library(shinyjs)
 library(DT)
 library(kinship2)
 library(openxlsx)
-library(tidyverse)
+library(tidyverse
 
 server <- function(input, output, session) { # nolint
   observe({
