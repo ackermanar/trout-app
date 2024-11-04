@@ -18,7 +18,7 @@ library(shinyjs)
 library(DT)
 library(kinship2)
 library(openxlsx)
-library(tidyverse
+library(tidyverse)
 
 server <- function(input, output, session) { # nolint
   observe({
@@ -60,6 +60,7 @@ server <- function(input, output, session) { # nolint
       paste("Candidate file upload successful, please upload weight and length files.")
     })
 
+    # Kinship matrix calculation -------------------------------------
     if (!is.null(input$pedigree_file)) {
       tryCatch({
         raw_ped <- read_table(input$pedigree_file$datapath) %>%
@@ -189,8 +190,10 @@ server <- function(input, output, session) { # nolint
         output$message1 <- renderText({
          paste("Please inspect the pedigree file formatting, an error occurred:", e$message)
         })
-      })
-    }
+      }) # End second tryCatch
+    } # End kinship matrix calculation
+
+    # EBV matrix calculation -------------------------------------
 
     if (!is.null(input$weight_file) && !is.null(input$length_file)) {
       tryCatch({
@@ -200,7 +203,6 @@ server <- function(input, output, session) { # nolint
         length_ebvs <- read_table(input$length_file$datapath)
         testTot <- input$weight1 + input$weight2
         
-        #### EBV calculations ####
         # calculate index function
         calculate_index <- function(...) {
         args <- list(...)
@@ -366,10 +368,60 @@ server <- function(input, output, session) { # nolint
         output$message2 <- renderText({
           paste("An error occurred:", e$message)
         })
-      })
-    }
+      }) # End third tryCatch
+    } # End EBV matrix calculation
 
-    output$download <- downloadHandler(
+    # Running spawners calculation -------------------------------------
+    tryCatch({
+      # read in ebv list (this is where the family and full ID will be pulled from)
+      ebvs <- length_ebvs %>%
+        select(c(1)) %>%
+        separate(ID, into = c("tag", "family"), sep = "_") %>%
+        mutate(last_four = str_sub(tag, -4, -1))
+
+      # read list of broodstock used
+      spawners <- read.table(input$running_spawners$datapath, sep = "\t", header = T) %>%
+        janitor::clean_names() %>%
+        select(c(1,2,4,7,8))
+
+      # pull info from previously updated ebv file and generate a full report
+      spawners <- spawners %>%
+        left_join(ebvs, by = c("female" = "last_four")) %>%
+        rename(female_fam = family, female_tag = tag) %>%
+        left_join(ebvs, by = c("male" = "last_four")) %>%
+        rename(male_fam = family, male_tag = tag,`2024_cross` = cross) %>%
+        mutate(date = as.Date(date, format = "%m/%d/%y")) %>%
+        select(c(4,1,6,7,8,9,5)) %>%
+        arrange(date)
+
+      # count how many times each cross between families (regardless of reciprocals) has been made
+      cross_counter = spawners %>%
+        mutate(
+          cross_id = ifelse(
+            as.numeric(gsub("CX-", "", female_fam)) < as.numeric(gsub("CX-", "", male_fam)),
+            paste(female_fam, male_fam, sep = " x "),
+            paste(male_fam, female_fam, sep = " x ")
+          )
+        ) %>%
+      group_by(cross_id) %>%
+        summarise(count = n(), .groups = 'drop') %>%
+        arrange(desc(count))
+      
+      # count how many times each family has been used regardless of male and female
+      family_counter <- as.data.frame(rbind(
+        data.frame(family = spawners$male_fam),
+        data.frame(family = spawners$female_fam)
+      )) %>%
+        group_by(family) %>%  # Correctly referencing the column name
+        summarise(count = n(), .groups = 'drop') %>%
+        arrange(desc(count))
+      }, error = function(e) {
+        output$message2 <- renderText({
+          paste("An error occurred in running spawners:", e$message)
+        })
+      })
+
+    output$download1 <- downloadHandler(
       filename = function() {
         paste0("trout_app_results-", Sys.Date(), ".xlsx")
       },
@@ -388,6 +440,29 @@ server <- function(input, output, session) { # nolint
         saveWorkbook(wb, file, overwrite = TRUE)
       }
     )
+
+    output$download2 <- downloadHandler(
+      filename = function() {
+        paste0("running_spawners-", Sys.Date(), ".xlsx")
+        },
+        content = function(file) {
+          wb <- createWorkbook()
+
+          # Add a worksheet for the selected matrix
+          addWorksheet(wb, "cross-to-date report")
+          writeData(wb, sheet = "cross-to-date report", spawners, rowNames = TRUE)
+
+          # Add a worksheet for the matrix
+          addWorksheet(wb, "cross counter")
+          writeData(wb, sheet = "cross counter", cross_counter, rowNames = TRUE)
+          
+          addWorksheet(wb, "Family counter")
+          writeData(wb, sheet = "Family counter", family_counter, rowNames = TRUE)
+
+          # Save the workbook
+          saveWorkbook(wb, file, overwrite = TRUE)
+      }
+    )
   }) %>%
-      bindEvent(input$pedigree_file, input$candidate_file, input$thresh, input$download, input$weight_file, input$weight1, input$length_file, input$weight2)
+    bindEvent(input$pedigree_file, input$candidate_file, input$thresh, input$download1, input$weight_file, input$weight1, input$length_file, input$weight2, input$running_spawners, input$download2)
 }
