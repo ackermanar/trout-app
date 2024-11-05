@@ -33,7 +33,7 @@ server <- function(input, output, session) { # nolint
         return("Please upload weights for length and weight.")
       }
     })
-    
+
     # read in list of candidates with cols
     req(input$candidate_file)
     tryCatch({
@@ -141,23 +141,23 @@ server <- function(input, output, session) { # nolint
 
         output$quadrants_table <- renderDT({
           datatable(quadrants,
-                    options = list(ordering = FALSE, dom = 't'),
+                    options = list(ordering = FALSE, dom = "t"),
                     rownames = TRUE) %>%
             formatStyle(
-              'Q25',
-              backgroundColor = 'lightgreen'
+              "Q25",
+              backgroundColor = "lightgreen"
             ) %>%
             formatStyle(
-              'Q50',
-              backgroundColor = 'yellow'
+              "Q50",
+              backgroundColor = "yellow"
             ) %>%
             formatStyle(
-              'Q75',
-              backgroundColor = 'orange'
+              "Q75",
+              backgroundColor = "orange"
             ) %>%
             formatStyle(
-              'Q100',
-              backgroundColor = 'coral'
+              "Q100",
+              backgroundColor = "coral"
             )
         })
 
@@ -171,14 +171,14 @@ server <- function(input, output, session) { # nolint
         output$matrix <- renderDT({
           datatable(results, rownames = TRUE) %>%
             formatStyle(
-              'Kinship',
+              "Kinship",
               backgroundColor = styleInterval(
                 c(
                   quantilesKinship$Q25[[1]],
                   quantilesKinship$Q50[[1]],
                   quantilesKinship$Q75[[1]]
                 ),
-                c('lightgreen', 'yellow', 'orange', 'coral')  # Four colors for three intervals
+                c("lightgreen", "yellow", "orange", "coral")  # Four colors for three intervals
               )
             )
         })
@@ -223,7 +223,7 @@ server <- function(input, output, session) { # nolint
         # Start with the first dataset in the list
         joint_ebvs <- ebv_list[[1]]
         
-        # Merge all EBV datasets by 'ID'
+        # Merge all EBV datasets by "ID"
         for (i in 2:length(ebv_list)) {
             joint_ebvs <- merge(joint_ebvs, ebv_list[[i]], by = "ID", suffixes = c("", paste0(".", i)))
         }
@@ -290,23 +290,23 @@ server <- function(input, output, session) { # nolint
         # Render full quantile summary with formatting
        output$quadrants_table <- renderDT({
         datatable(quadrants,
-                  options = list(ordering = FALSE, dom = 't'),
+                  options = list(ordering = FALSE, dom = "t"),
                   rownames = TRUE) %>%
           formatStyle(
-            'Q25',
-            backgroundColor = 'lightgreen'
+            "Q25",
+            backgroundColor = "lightgreen"
           ) %>%
           formatStyle(
-            'Q50',
-            backgroundColor = 'yellow'
+            "Q50",
+            backgroundColor = "yellow"
           ) %>%
           formatStyle(
-            'Q75',
-            backgroundColor = 'orange'
+            "Q75",
+            backgroundColor = "orange"
           ) %>%
           formatStyle(
-            'Q100',
-            backgroundColor = 'coral'
+            "Q100",
+            backgroundColor = "coral"
           )
       })
 
@@ -323,25 +323,25 @@ server <- function(input, output, session) { # nolint
         output$matrix <- renderDT({
           datatable(filtered_results, rownames = TRUE) %>%
             formatStyle(
-              'Kinship',
+              "Kinship",
               backgroundColor = styleInterval(
                 c(
                   quantilesKinship$Q25[[1]],
                   quantilesKinship$Q50[[1]],
                   quantilesKinship$Q75[[1]]
                 ),
-                c('lightgreen', 'yellow', 'orange', 'coral')  # Four colors for three intervals
+                c("lightgreen", "yellow", "orange", "coral")  # Four colors for three intervals
               )
             ) %>%
             formatStyle(
-              'EBV',
+              "EBV",
               backgroundColor = styleInterval(
                 c(
                   quantilesEBV$Q100[[1]],
                   quantilesEBV$Q75[[1]],
                   quantilesEBV$Q50[[1]]
                 ),
-                c('coral', 'orange', 'yellow', 'lightgreen')  # Four colors for three intervals
+                c("coral", "orange", "yellow", "lightgreen")  # Four colors for three intervals
                )
             )
         })
@@ -405,7 +405,7 @@ server <- function(input, output, session) { # nolint
           )
         ) %>%
         group_by(cross_id) %>%
-          summarise(count = n(), .groups = 'drop') %>%
+          summarise(count = n(), .groups = "drop") %>%
           arrange(desc(count))
       
       # count how many times each family has been used regardless of male and female
@@ -414,7 +414,7 @@ server <- function(input, output, session) { # nolint
         data.frame(family = spawners$female_fam)
       )) %>%
         group_by(family) %>%  # Correctly referencing the column name
-        summarise(count = n(), .groups = 'drop') %>%
+        summarise(count = n(), .groups = "drop") %>%
         arrange(desc(count))
       }, error = function(e) {
         output$message2 <- renderText({

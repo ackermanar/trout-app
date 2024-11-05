@@ -39,6 +39,7 @@ ui <- fluidPage(
       numericInput("thresh", "Threshold to filter kinship:", 1, min = 0, max = 1, step = 0.1),
       h3("Export results"),
       downloadButton("download1", label = "Download"),
+      br(),
       fileInput("running_spawners", "Optional: Upload running spawner list to track number of time each family has been used", accept = c(".csv", ".txt")),
       downloadButton("download2", label = "Download spawner list")
     ),
