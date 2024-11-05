@@ -122,6 +122,7 @@ server <- function(input, output, session) { # nolint
 
         # Select rows and columns based on the list of ids
         selected_matrix <- kinship_matrix[males_to_select, females_to_select]
+      
 
         quantilesKinship <- list(
           Data = "Kinship",
