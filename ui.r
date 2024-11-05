@@ -31,14 +31,17 @@ ui <- fluidPage(
                 accept = ".txt"),
       h4("Calculate EBVs"),
       fileInput("weight_file", "Upload EBVs for weights", accept = c(".csv", ".txt")),
-      numericInput("weight1", "EBV weight for fish weight:", 0.5, min = 0, max = 1, step = 0.1),
+      numericInput("weight1", "EBV weight for fish weight:", 0.5, min = 0, max = 1, step = 0.1, value = 1),
       verbatimTextOutput("weight1"),
       fileInput("length_file", "Upload EBVs for length", accept = c(".csv", ".txt")),
-      numericInput("weight2", "EBV weight for fish length:", 0.5, min = 0, max = 1, step = 0.1),
+      numericInput("weight2", "EBV weight for fish length:", 0.5, min = 0, max = 1, step = 0.1, value = 1),
       h4("Select level to threshold Kinship"),
       numericInput("thresh", "Threshold to filter kinship:", 1, min = 0, max = 1, step = 0.1),
       h3("Export results"),
-      downloadButton("download", label = "Download")
+      downloadButton("download1", label = "Download"),
+      br(),
+      fileInput("running_spawners", "Optional: Upload running spawner list to track number of time each family has been used", accept = c(".csv", ".txt")),
+      downloadButton("download2", label = "Download spawner list")
     ),
     mainPanel(
       h5("User feedback for calclulating kinship:"),

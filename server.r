@@ -24,7 +24,7 @@ server <- function(input, output, session) { # nolint
   observe({
     output$message1 <- renderText({
       if (is.null(input$pedigree_file)) {
-      return("Please upload a candidate file and a pedigree file.")
+        return("Please upload a candidate file and a pedigree file.")
       }
     })
 
@@ -33,6 +33,7 @@ server <- function(input, output, session) { # nolint
         return("Please upload weights for length and weight.")
       }
     })
+
     # read in list of candidates with cols
     req(input$candidate_file)
     tryCatch({
@@ -48,7 +49,7 @@ server <- function(input, output, session) { # nolint
         pull(id)
     }, error = function(e) {
       output$message1 <- renderText({
-         paste("Please inspect the candidate file formatting, an error occurred:", e$message)
+        paste("Please inspect the candidate file formatting, an error occurred:", e$message)
       })
     })
 
@@ -60,19 +61,20 @@ server <- function(input, output, session) { # nolint
       paste("Candidate file upload successful, please upload weight and length files.")
     })
 
+    # Kinship matrix calculation -------------------------------------
     if (!is.null(input$pedigree_file)) {
       tryCatch({
         raw_ped <- read_table(input$pedigree_file$datapath) %>%
           mutate(id = as.factor(id),
-                 sire = as.factor(sire),
-                 dam = as.factor(dam)
+            sire = as.factor(sire),
+            dam = as.factor(dam)
           )
 
         sex_ped <- raw_ped %>%
           mutate(sex = case_when(
-                 id %in% sire ~ 0,
-                 id %in% dam ~ 1,
-                 .default = 2
+            id %in% sire ~ 0,
+            id %in% dam ~ 1,
+            .default = 2
           ))
 
         #check for ids that appear as both sire and dam
@@ -92,7 +94,7 @@ server <- function(input, output, session) { # nolint
         n_occur <- data.frame(table(parents_fixed_ped$id)) %>%
           rename(id = 1, freq = 2) #count occurrence of each ID
 
-        double_ids <- n_occur[n_occur$freq > 1,] #print ids with more than 1 occurrence
+        double_ids <- n_occur[n_occur$freq > 1, ] #print ids with more than 1 occurrence
 
         #create new dataframe without doubled ids(all instances are removed to avoid data errors)
         nodup_ped <- parents_fixed_ped[!parents_fixed_ped$id %in% double_ids$id, ]
@@ -121,6 +123,7 @@ server <- function(input, output, session) { # nolint
         # Select rows and columns based on the list of ids
         selected_matrix <- kinship_matrix[males_to_select, females_to_select]
       
+
         quantilesKinship <- list(
           Data = "Kinship",
           Q25 = quantile(selected_matrix, 0.25),
@@ -135,23 +138,23 @@ server <- function(input, output, session) { # nolint
 
         output$quadrants_table <- renderDT({
           datatable(quadrants,
-                    options = list(ordering = FALSE, dom = 't'),
+                    options = list(ordering = FALSE, dom = "t"),
                     rownames = TRUE) %>%
             formatStyle(
-              'Q25',
-              backgroundColor = 'lightgreen'
+              "Q25",
+              backgroundColor = "lightgreen"
             ) %>%
             formatStyle(
-              'Q50',
-              backgroundColor = 'yellow'
+              "Q50",
+              backgroundColor = "yellow"
             ) %>%
             formatStyle(
-              'Q75',
-              backgroundColor = 'orange'
+              "Q75",
+              backgroundColor = "orange"
             ) %>%
             formatStyle(
-              'Q100',
-              backgroundColor = 'coral'
+              "Q100",
+              backgroundColor = "coral"
             )
         })
 
@@ -165,14 +168,14 @@ server <- function(input, output, session) { # nolint
         output$matrix <- renderDT({
           datatable(results, rownames = TRUE) %>%
             formatStyle(
-              'Kinship',
+              "Kinship",
               backgroundColor = styleInterval(
                 c(
                   quantilesKinship$Q25[[1]],
                   quantilesKinship$Q50[[1]],
                   quantilesKinship$Q75[[1]]
                 ),
-                c('lightgreen', 'yellow', 'orange', 'coral')  # Four colors for three intervals
+                c("lightgreen", "yellow", "orange", "coral")  # Four colors for three intervals
               )
             )
         })
@@ -185,8 +188,10 @@ server <- function(input, output, session) { # nolint
         output$message1 <- renderText({
          paste("Please inspect the pedigree file formatting, an error occurred:", e$message)
         })
-      })
-    }
+      }) # End second tryCatch
+    } # End kinship matrix calculation
+
+    # EBV matrix calculation -------------------------------------
 
     if (!is.null(input$weight_file) && !is.null(input$length_file)) {
       tryCatch({
@@ -196,7 +201,6 @@ server <- function(input, output, session) { # nolint
         length_ebvs <- read_table(input$length_file$datapath)
         testTot <- input$weight1 + input$weight2
         
-        #### EBV calculations ####
         # calculate index function
         calculate_index <- function(...) {
         args <- list(...)
@@ -216,14 +220,14 @@ server <- function(input, output, session) { # nolint
         # Start with the first dataset in the list
         joint_ebvs <- ebv_list[[1]]
         
-        # Merge all EBV datasets by 'ID'
+        # Merge all EBV datasets by "ID"
         for (i in 2:length(ebv_list)) {
             joint_ebvs <- merge(joint_ebvs, ebv_list[[i]], by = "ID", suffixes = c("", paste0(".", i)))
         }
         
         # Calculate the index value
         joint_ebvs$index_val <- 0
-        for (i in 1:length(rel_weights)) {
+        for (i in seq_along(rel_weights)) {
             if (i == 1) {
             ebv_col_name <- "EBV"
             } else {
@@ -240,14 +244,14 @@ server <- function(input, output, session) { # nolint
         # subset EBVs to those of candidates only and by sex
         candidate_ebvs <- candidates %>%
           left_join(weight_length_index, by = c("id" = "ID")) %>%
-          select(c(1,2,5))
+          select(c(1, 2, 5))
 
         male_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% males_to_select, ] %>% 
-          select(c(1,3)) 
+          select(c(1, 3))
 
         female_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% females_to_select, ] %>% 
-          select(c(1,3)) 
-
+          select(c(1, 3))
+          
         # make matrix of EBVs
         # Initialize an empty matrix
         ebv_matrix <- matrix(NA, nrow = nrow(male_candidate_ebvs), ncol = nrow(female_candidate_ebvs))
@@ -255,8 +259,8 @@ server <- function(input, output, session) { # nolint
         colnames(ebv_matrix) <- female_candidate_ebvs$id
 
         # Populate the matrix with average EBV values
-        for(i in 1:nrow(male_candidate_ebvs)) {
-        for(j in 1:nrow(female_candidate_ebvs)) {
+        for(i in seq_len(nrow(male_candidate_ebvs))) {
+        for(j in seq_len(nrow(female_candidate_ebvs))) {
             ebv_matrix[i, j] <- round(mean(c(male_candidate_ebvs$index_val[i], female_candidate_ebvs$index_val[j])),2)
         }
         }
@@ -281,23 +285,23 @@ server <- function(input, output, session) { # nolint
         # Render full quantile summary with formatting
        output$quadrants_table <- renderDT({
         datatable(quadrants,
-                  options = list(ordering = FALSE, dom = 't'),
+                  options = list(ordering = FALSE, dom = "t"),
                   rownames = TRUE) %>%
           formatStyle(
-            'Q25',
-            backgroundColor = 'lightgreen'
+            "Q25",
+            backgroundColor = "lightgreen"
           ) %>%
           formatStyle(
-            'Q50',
-            backgroundColor = 'yellow'
+            "Q50",
+            backgroundColor = "yellow"
           ) %>%
           formatStyle(
-            'Q75',
-            backgroundColor = 'orange'
+            "Q75",
+            backgroundColor = "orange"
           ) %>%
           formatStyle(
-            'Q100',
-            backgroundColor = 'coral'
+            "Q100",
+            backgroundColor = "coral"
           )
       })
 
@@ -314,25 +318,25 @@ server <- function(input, output, session) { # nolint
         output$matrix <- renderDT({
           datatable(filtered_results, rownames = TRUE) %>%
             formatStyle(
-              'Kinship',
+              "Kinship",
               backgroundColor = styleInterval(
                 c(
                   quantilesKinship$Q25[[1]],
                   quantilesKinship$Q50[[1]],
                   quantilesKinship$Q75[[1]]
                 ),
-                c('lightgreen', 'yellow', 'orange', 'coral')  # Four colors for three intervals
+                c("lightgreen", "yellow", "orange", "coral")  # Four colors for three intervals
               )
             ) %>%
             formatStyle(
-              'EBV',
+              "EBV",
               backgroundColor = styleInterval(
                 c(
                   quantilesEBV$Q100[[1]],
                   quantilesEBV$Q75[[1]],
                   quantilesEBV$Q50[[1]]
                 ),
-                c('coral', 'orange', 'yellow', 'lightgreen')  # Four colors for three intervals
+                c("coral", "orange", "yellow", "lightgreen")  # Four colors for three intervals
                )
             )
         })
@@ -360,10 +364,60 @@ server <- function(input, output, session) { # nolint
         output$message2 <- renderText({
           paste("An error occurred:", e$message)
         })
-      })
-    }
+      }) # End third tryCatch
+    } # End EBV matrix calculation
 
-    output$download <- downloadHandler(
+    # Running spawners calculation -------------------------------------
+    tryCatch({
+      # read in ebv list (this is where the family and full ID will be pulled from)
+      ebvs <- length_ebvs %>%
+        select(c(1)) %>%
+        separate(ID, into = c("tag", "family"), sep = "_") %>%
+        mutate(last_four = str_sub(tag, -4, -1))
+
+      # read list of broodstock used
+      spawners <- read.table(input$running_spawners$datapath, sep = "\t", header = T) %>%
+        janitor::clean_names() %>%
+        select(c(1,2,4,7,8))
+
+      # pull info from previously updated ebv file and generate a full report
+      spawners <- spawners %>%
+        left_join(ebvs, by = c("female" = "last_four")) %>%
+        rename(female_fam = family, female_tag = tag) %>%
+        left_join(ebvs, by = c("male" = "last_four")) %>%
+        rename(male_fam = family, male_tag = tag,`2024_cross` = cross) %>%
+        mutate(date = as.Date(date, format = "%m/%d/%y")) %>%
+        select(c(4, 1, 6, 7, 8, 9, 5)) %>%
+        arrange(date)
+
+      # count how many times each cross between families (regardless of reciprocals) has been made
+      cross_counter <- spawners %>%
+        mutate(
+          cross_id = ifelse(
+            as.numeric(gsub("CX-", "", female_fam)) < as.numeric(gsub("CX-", "", male_fam)),
+            paste(female_fam, male_fam, sep = " x "),
+            paste(male_fam, female_fam, sep = " x ")
+          )
+        ) %>%
+        group_by(cross_id) %>%
+          summarise(count = n(), .groups = "drop") %>%
+          arrange(desc(count))
+      
+      # count how many times each family has been used regardless of male and female
+      family_counter <- as.data.frame(rbind(
+        data.frame(family = spawners$male_fam),
+        data.frame(family = spawners$female_fam)
+      )) %>%
+        group_by(family) %>%  # Correctly referencing the column name
+        summarise(count = n(), .groups = "drop") %>%
+        arrange(desc(count))
+      }, error = function(e) {
+        output$message2 <- renderText({
+          paste("An error occurred in running spawners:", e$message)
+        })
+      })
+
+    output$download1 <- downloadHandler(
       filename = function() {
         paste0("trout_app_results-", Sys.Date(), ".xlsx")
       },
@@ -382,6 +436,29 @@ server <- function(input, output, session) { # nolint
         saveWorkbook(wb, file, overwrite = TRUE)
       }
     )
+
+    output$download2 <- downloadHandler(
+      filename = function() {
+        paste0("running_spawners-", Sys.Date(), ".xlsx")
+        },
+        content = function(file) {
+          wb <- createWorkbook()
+
+          # Add a worksheet for the selected matrix
+          addWorksheet(wb, "cross-to-date report")
+          writeData(wb, sheet = "cross-to-date report", spawners, rowNames = TRUE)
+
+          # Add a worksheet for the matrix
+          addWorksheet(wb, "cross counter")
+          writeData(wb, sheet = "cross counter", cross_counter, rowNames = TRUE)
+          
+          addWorksheet(wb, "Family counter")
+          writeData(wb, sheet = "Family counter", family_counter, rowNames = TRUE)
+
+          # Save the workbook
+          saveWorkbook(wb, file, overwrite = TRUE)
+      }
+    )
   }) %>%
-      bindEvent(input$pedigree_file, input$candidate_file, input$thresh, input$download, input$weight_file, input$weight1, input$length_file, input$weight2)
+    bindEvent(input$pedigree_file, input$candidate_file, input$thresh, input$download1, input$weight_file, input$weight1, input$length_file, input$weight2, input$running_spawners, input$download2)
 }
