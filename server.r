@@ -429,8 +429,8 @@ server <- function(input, output, session) { # nolint
             formatStyle(
               "count",
               backgroundColor = styleInterval(
-                c(4, 3, 2, 1),
-                c("coral", "orange", "yellow", "lightgreen")
+                c(1, 2, 3),  # Breakpoints
+                c("lightgreen", "yellow", "orange", "coral")  # Colors
               )
             )
         })
