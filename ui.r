@@ -31,10 +31,10 @@ ui <- fluidPage(
                 accept = ".txt"),
       h4("Calculate EBVs"),
       fileInput("weight_file", "Upload EBVs for weights", accept = c(".csv", ".txt")),
-      numericInput("weight1", "EBV weight for fish weight:", 0.5, min = 0, max = 1, step = 0.1, value = 1),
+      numericInput("weight1", "EBV weight for fish weight:", 0.5, min = 0, max = 1, step = 0.1),
       verbatimTextOutput("weight1"),
       fileInput("length_file", "Upload EBVs for length", accept = c(".csv", ".txt")),
-      numericInput("weight2", "EBV weight for fish length:", 0.5, min = 0, max = 1, step = 0.1, value = 1),
+      numericInput("weight2", "EBV weight for fish length:", 0.5, min = 0, max = 1, step = 0.1),
       h4("Select level to threshold Kinship"),
       numericInput("thresh", "Threshold to filter kinship:", 1, min = 0, max = 1, step = 0.1),
       h3("Export results"),
@@ -44,12 +44,21 @@ ui <- fluidPage(
       downloadButton("download2", label = "Download spawner list")
     ),
     mainPanel(
-      h5("User feedback for calclulating kinship:"),
-      verbatimTextOutput("message1"),
-      h5("User feedback for calclulating EBVs:"),
-      verbatimTextOutput("message2"),
-      DTOutput("quadrants_table"),
-      DTOutput("matrix")
+      tabsetPanel(
+        tabPanel("Kinship and EBV",
+          h5("User feedback for calclulating kinship:"),
+          verbatimTextOutput("message1"),
+          h5("User feedback for calclulating EBVs:"),
+          verbatimTextOutput("message2"),
+          DTOutput("quadrants_table"),
+          DTOutput("matrix")
+        ),
+        tabPanel("Running spawners",
+          h5("User feedback for tracking running spawners:"),
+          verbatimTextOutput("message3"),
+          DTOutput("spawner_table")
+        )
+      )
     )
   )
 )

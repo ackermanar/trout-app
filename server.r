@@ -367,55 +367,73 @@ server <- function(input, output, session) { # nolint
       }) # End third tryCatch
     } # End EBV matrix calculation
 
+    output$message3 <- renderText({
+      if (is.null(input$running_spawners)) {
+        return("Please upload a running spawner list.")
+      }
+    })
+
     # Running spawners calculation -------------------------------------
-    tryCatch({
-      # read in ebv list (this is where the family and full ID will be pulled from)
-      ebvs <- length_ebvs %>%
-        select(c(1)) %>%
-        separate(ID, into = c("tag", "family"), sep = "_") %>%
-        mutate(last_four = str_sub(tag, -4, -1))
+    if (!is.null(input$running_spawners)) {
+      tryCatch({
+        # read in ebv list (this is where the family and full ID will be pulled from)
+        ebvs <- length_ebvs %>%
+          select(c(1)) %>%
+          separate(ID, into = c("tag", "family"), sep = "_") %>%
+          mutate(last_four = str_sub(tag, -4, -1))
 
-      # read list of broodstock used
-      spawners <- read.table(input$running_spawners$datapath, sep = "\t", header = T) %>%
-        janitor::clean_names() %>%
-        select(c(1,2,4,7,8))
+        # read list of broodstock used
+        spawners <- read.table(input$running_spawners$datapath, sep = "\t", header = T) %>%
+          janitor::clean_names() %>%
+          select(c(1,2,4,7,8))
 
-      # pull info from previously updated ebv file and generate a full report
-      spawners <- spawners %>%
-        left_join(ebvs, by = c("female" = "last_four")) %>%
-        rename(female_fam = family, female_tag = tag) %>%
-        left_join(ebvs, by = c("male" = "last_four")) %>%
-        rename(male_fam = family, male_tag = tag,`2024_cross` = cross) %>%
-        mutate(date = as.Date(date, format = "%m/%d/%y")) %>%
-        select(c(4, 1, 6, 7, 8, 9, 5)) %>%
-        arrange(date)
+        # pull info from previously updated ebv file and generate a full report
+        spawners <- spawners %>%
+          left_join(ebvs, by = c("female" = "last_four")) %>%
+          rename(female_fam = family, female_tag = tag) %>%
+          left_join(ebvs, by = c("male" = "last_four")) %>%
+          rename(male_fam = family, male_tag = tag,`2024_cross` = cross) %>%
+          mutate(date = as.Date(date, format = "%m/%d/%y")) %>%
+          select(c(4, 1, 6, 7, 8, 9, 5)) %>%
+          arrange(date)
 
-      # count how many times each cross between families (regardless of reciprocals) has been made
-      cross_counter <- spawners %>%
-        mutate(
-          cross_id = ifelse(
-            as.numeric(gsub("CX-", "", female_fam)) < as.numeric(gsub("CX-", "", male_fam)),
-            paste(female_fam, male_fam, sep = " x "),
-            paste(male_fam, female_fam, sep = " x ")
-          )
-        ) %>%
-        group_by(cross_id) %>%
+        # count how many times each cross between families (regardless of reciprocals) has been made
+        cross_counter <- spawners %>%
+          mutate(
+            cross_id = ifelse(
+              as.numeric(gsub("CX-", "", female_fam)) < as.numeric(gsub("CX-", "", male_fam)),
+              paste(female_fam, male_fam, sep = " x "),
+              paste(male_fam, female_fam, sep = " x ")
+            )
+          ) %>%
+          group_by(cross_id) %>%
           summarise(count = n(), .groups = "drop") %>%
           arrange(desc(count))
-      
-      # count how many times each family has been used regardless of male and female
-      family_counter <- as.data.frame(rbind(
-        data.frame(family = spawners$male_fam),
-        data.frame(family = spawners$female_fam)
-      )) %>%
-        group_by(family) %>%  # Correctly referencing the column name
-        summarise(count = n(), .groups = "drop") %>%
-        arrange(desc(count))
+
+        # count how many times each family has been used regardless of male and female
+        family_counter <- as.data.frame(rbind(
+          data.frame(family = spawners$male_fam),
+          data.frame(family = spawners$female_fam)
+        )) %>%
+          group_by(family) %>%  # Correctly referencing the column name
+          summarise(count = n(), .groups = "drop") %>%
+          arrange(desc(count))
+
+        output$message3 <- renderText({
+          paste("Running spawners list uploaded successfully.")
+        })
+
+        output$spawner_table <- renderDT({
+          datatable(spawners, rownames = FALSE)
+        })
+
       }, error = function(e) {
-        output$message2 <- renderText({
+        output$message3 <- renderText({
           paste("An error occurred in running spawners:", e$message)
         })
+
       })
+    } # End running spawners calculation
 
     output$download1 <- downloadHandler(
       filename = function() {
