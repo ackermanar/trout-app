@@ -22,6 +22,7 @@ library(tidyverse)
 
 server <- function(input, output, session) { # nolint
   observe({
+    # User feedback messages
     output$message1 <- renderText({
       if (is.null(input$pedigree_file)) {
         return("Please upload a candidate file and a pedigree file.")
@@ -31,6 +32,12 @@ server <- function(input, output, session) { # nolint
     output$message2 <- renderText({
       if (is.null(input$pedigree_file)) {
         return("Please upload weights for length and weight.")
+      }
+    })
+
+    output$message3 <- renderText({
+      if (is.null(input$running_spawners)) {
+        return("Please upload a running spawner list.")
       }
     })
 
@@ -59,10 +66,6 @@ server <- function(input, output, session) { # nolint
 
     output$message2 <- renderText({
       paste("Candidate file upload successful, please upload weight and length files.")
-    })
-
-    output$message3 <- renderText({
-      paste("Please upload a running spawner list.")
     })
 
     # Kinship matrix calculation -------------------------------------
@@ -126,7 +129,6 @@ server <- function(input, output, session) { # nolint
 
         # Select rows and columns based on the list of ids
         selected_matrix <- kinship_matrix[males_to_select, females_to_select]
-      
 
         quantilesKinship <- list(
           Data = "Kinship",
@@ -190,7 +192,7 @@ server <- function(input, output, session) { # nolint
         }
       }, error = function(e) {
         output$message1 <- renderText({
-         paste("Please inspect the pedigree file formatting, an error occurred:", e$message)
+          paste("Please inspect the pedigree file formatting, an error occurred:", e$message)
         })
       }) # End second tryCatch
     } # End kinship matrix calculation
@@ -204,43 +206,42 @@ server <- function(input, output, session) { # nolint
         weight_ebvs <- read_table(input$weight_file$datapath)
         length_ebvs <- read_table(input$length_file$datapath)
         testTot <- input$weight1 + input$weight2
-        
+
         # calculate index function
         calculate_index <- function(...) {
-        args <- list(...)
-        
-        # Ensure the number of arguments is even (each dataset must have a corresponding weight)
-        if (length(args) %% 2 != 0) {
-          output$message2 <- renderText({
-            paste("Each EBV dataset must be followed by a corresponding weight.")
-          })
-          stop("Each EBV dataset must be followed by a corresponding weight.")
-        }
-        
-        # Separate the datasets and weights
-        ebv_list <- args[seq(1, length(args), by = 2)]
-        rel_weights <- unlist(args[seq(2, length(args), by = 2)])
+          args <- list(...)
 
-        # Start with the first dataset in the list
-        joint_ebvs <- ebv_list[[1]]
-        
-        # Merge all EBV datasets by "ID"
-        for (i in 2:length(ebv_list)) {
+          # Ensure the number of arguments is even (each dataset must have a corresponding weight)
+          if (length(args) %% 2 != 0) {
+            output$message2 <- renderText({
+              paste("Each EBV dataset must be followed by a corresponding weight.")
+            })
+            stop("Each EBV dataset must be followed by a corresponding weight.")
+          }
+
+          # Separate the datasets and weights
+          ebv_list <- args[seq(1, length(args), by = 2)]
+          rel_weights <- unlist(args[seq(2, length(args), by = 2)])
+
+          # Start with the first dataset in the list
+          joint_ebvs <- ebv_list[[1]]
+
+          # Merge all EBV datasets by "ID"
+          for (i in 2:length(ebv_list)) {
             joint_ebvs <- merge(joint_ebvs, ebv_list[[i]], by = "ID", suffixes = c("", paste0(".", i)))
-        }
-        
-        # Calculate the index value
-        joint_ebvs$index_val <- 0
-        for (i in seq_along(rel_weights)) {
+          }
+
+          # Calculate the index value
+          joint_ebvs$index_val <- 0
+          for (i in seq_along(rel_weights)) {
             if (i == 1) {
-            ebv_col_name <- "EBV"
+              ebv_col_name <- "EBV"
             } else {
-            ebv_col_name <- paste0("EBV.", i)
+              ebv_col_name <- paste0("EBV.", i)
             }
             joint_ebvs$index_val <- joint_ebvs$index_val + (rel_weights[i] * joint_ebvs[[ebv_col_name]])
-        }
-        
-        return(joint_ebvs)
+          }
+          return(joint_ebvs)
         }
 
         weight_length_index <- calculate_index(weight_ebvs, input$weight1, length_ebvs, input$weight2)
@@ -263,10 +264,10 @@ server <- function(input, output, session) { # nolint
         colnames(ebv_matrix) <- female_candidate_ebvs$id
 
         # Populate the matrix with average EBV values
-        for(i in seq_len(nrow(male_candidate_ebvs))) {
-        for(j in seq_len(nrow(female_candidate_ebvs))) {
+        for (i in seq_len(nrow(male_candidate_ebvs))) {
+          for (j in seq_len(nrow(female_candidate_ebvs))) {
             ebv_matrix[i, j] <- round(mean(c(male_candidate_ebvs$index_val[i], female_candidate_ebvs$index_val[j])),2)
-        }
+          }
         }
 
         # Calculate quantiles for the EBV matrix
