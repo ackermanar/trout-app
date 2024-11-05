@@ -24,7 +24,7 @@ server <- function(input, output, session) { # nolint
   observe({
     output$message1 <- renderText({
       if (is.null(input$pedigree_file)) {
-      return("Please upload a candidate file and a pedigree file.")
+        return("Please upload a candidate file and a pedigree file.")
       }
     })
 
@@ -33,6 +33,7 @@ server <- function(input, output, session) { # nolint
         return("Please upload weights for length and weight.")
       }
     })
+    
     # read in list of candidates with cols
     req(input$candidate_file)
     tryCatch({
@@ -48,7 +49,7 @@ server <- function(input, output, session) { # nolint
         pull(id)
     }, error = function(e) {
       output$message1 <- renderText({
-         paste("Please inspect the candidate file formatting, an error occurred:", e$message)
+        paste("Please inspect the candidate file formatting, an error occurred:", e$message)
       })
     })
 
@@ -65,15 +66,15 @@ server <- function(input, output, session) { # nolint
       tryCatch({
         raw_ped <- read_table(input$pedigree_file$datapath) %>%
           mutate(id = as.factor(id),
-                 sire = as.factor(sire),
-                 dam = as.factor(dam)
+            sire = as.factor(sire),
+            dam = as.factor(dam)
           )
 
         sex_ped <- raw_ped %>%
           mutate(sex = case_when(
-                 id %in% sire ~ 0,
-                 id %in% dam ~ 1,
-                 .default = 2
+            id %in% sire ~ 0,
+            id %in% dam ~ 1,
+            .default = 2
           ))
 
         #check for ids that appear as both sire and dam
@@ -93,7 +94,7 @@ server <- function(input, output, session) { # nolint
         n_occur <- data.frame(table(parents_fixed_ped$id)) %>%
           rename(id = 1, freq = 2) #count occurrence of each ID
 
-        double_ids <- n_occur[n_occur$freq > 1,] #print ids with more than 1 occurrence
+        double_ids <- n_occur[n_occur$freq > 1, ] #print ids with more than 1 occurrence
 
         #create new dataframe without doubled ids(all instances are removed to avoid data errors)
         nodup_ped <- parents_fixed_ped[!parents_fixed_ped$id %in% double_ids$id, ]
@@ -125,7 +126,7 @@ server <- function(input, output, session) { # nolint
         # Add labels to the rows and columns
         rownames(selected_matrix) <- paste("male", rownames(selected_matrix), sep = "_")
         colnames(selected_matrix) <- paste("female", colnames(selected_matrix), sep = "_")
-      
+
         quantilesKinship <- list(
           Data = "Kinship",
           Q25 = quantile(selected_matrix, 0.25),
@@ -229,7 +230,7 @@ server <- function(input, output, session) { # nolint
         
         # Calculate the index value
         joint_ebvs$index_val <- 0
-        for (i in 1:length(rel_weights)) {
+        for (i in seq_along(rel_weights)) {
             if (i == 1) {
             ebv_col_name <- "EBV"
             } else {
@@ -263,8 +264,8 @@ server <- function(input, output, session) { # nolint
         colnames(ebv_matrix) <- female_candidate_ebvs$id
 
         # Populate the matrix with average EBV values
-        for(i in 1:nrow(male_candidate_ebvs)) {
-        for(j in 1:nrow(female_candidate_ebvs)) {
+        for(i in seq_len(nrow(male_candidate_ebvs))) {
+        for(j in seq_len(nrow(female_candidate_ebvs))) {
             ebv_matrix[i, j] <- round(mean(c(male_candidate_ebvs$index_val[i], female_candidate_ebvs$index_val[j])),2)
         }
         }
@@ -391,11 +392,11 @@ server <- function(input, output, session) { # nolint
         left_join(ebvs, by = c("male" = "last_four")) %>%
         rename(male_fam = family, male_tag = tag,`2024_cross` = cross) %>%
         mutate(date = as.Date(date, format = "%m/%d/%y")) %>%
-        select(c(4,1,6,7,8,9,5)) %>%
+        select(c(4, 1, 6, 7, 8, 9, 5)) %>%
         arrange(date)
 
       # count how many times each cross between families (regardless of reciprocals) has been made
-      cross_counter = spawners %>%
+      cross_counter <- spawners %>%
         mutate(
           cross_id = ifelse(
             as.numeric(gsub("CX-", "", female_fam)) < as.numeric(gsub("CX-", "", male_fam)),
@@ -403,9 +404,9 @@ server <- function(input, output, session) { # nolint
             paste(male_fam, female_fam, sep = " x ")
           )
         ) %>%
-      group_by(cross_id) %>%
-        summarise(count = n(), .groups = 'drop') %>%
-        arrange(desc(count))
+        group_by(cross_id) %>%
+          summarise(count = n(), .groups = 'drop') %>%
+          arrange(desc(count))
       
       # count how many times each family has been used regardless of male and female
       family_counter <- as.data.frame(rbind(
