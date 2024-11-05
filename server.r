@@ -61,6 +61,10 @@ server <- function(input, output, session) { # nolint
       paste("Candidate file upload successful, please upload weight and length files.")
     })
 
+    output$message3 <- renderText({
+      paste("Please upload a running spawner list.")
+    })
+
     # Kinship matrix calculation -------------------------------------
     if (!is.null(input$pedigree_file)) {
       tryCatch({
@@ -251,7 +255,7 @@ server <- function(input, output, session) { # nolint
 
         female_candidate_ebvs <- candidate_ebvs[candidate_ebvs$id %in% females_to_select, ] %>% 
           select(c(1, 3))
-          
+
         # make matrix of EBVs
         # Initialize an empty matrix
         ebv_matrix <- matrix(NA, nrow = nrow(male_candidate_ebvs), ncol = nrow(female_candidate_ebvs))
@@ -283,27 +287,27 @@ server <- function(input, output, session) { # nolint
           column_to_rownames(var = "Data")
 
         # Render full quantile summary with formatting
-       output$quadrants_table <- renderDT({
-        datatable(quadrants,
-                  options = list(ordering = FALSE, dom = "t"),
-                  rownames = TRUE) %>%
-          formatStyle(
-            "Q25",
-            backgroundColor = "lightgreen"
-          ) %>%
-          formatStyle(
-            "Q50",
-            backgroundColor = "yellow"
-          ) %>%
-          formatStyle(
-            "Q75",
-            backgroundColor = "orange"
-          ) %>%
-          formatStyle(
-            "Q100",
-            backgroundColor = "coral"
-          )
-      })
+        output$quadrants_table <- renderDT({
+          datatable(quadrants,
+                    options = list(ordering = FALSE, dom = "t"),
+                    rownames = TRUE) %>%
+            formatStyle(
+              "Q25",
+              backgroundColor = "lightgreen"
+            ) %>%
+            formatStyle(
+              "Q50",
+              backgroundColor = "yellow"
+            ) %>%
+            formatStyle(
+              "Q75",
+              backgroundColor = "orange"
+            ) %>%
+            formatStyle(
+              "Q100",
+              backgroundColor = "coral"
+            )
+        })
 
         results <- as_tibble(ebv_matrix, rownames = "Row") %>%
           pivot_longer(-Row, names_to = "Female", values_to = "EBV") %>%
@@ -337,14 +341,14 @@ server <- function(input, output, session) { # nolint
                   quantilesEBV$Q50[[1]]
                 ),
                 c("coral", "orange", "yellow", "lightgreen")  # Four colors for three intervals
-               )
+              )
             )
         })
 
         matDL <- results %>%
           mutate(EBV = case_when(
-                                  Kinship > input$thresh | EBV < 0 ~ NA_real_,
-                                  .default = EBV)
+                                 Kinship > input$thresh | EBV < 0 ~ NA_real_,
+                                 .default = EBV)
           ) %>%
           select(Female, Male, EBV) %>%
           pivot_wider(names_from = Female, values_from = EBV) %>%
@@ -366,12 +370,6 @@ server <- function(input, output, session) { # nolint
         })
       }) # End third tryCatch
     } # End EBV matrix calculation
-
-    output$message3 <- renderText({
-      if (is.null(input$running_spawners)) {
-        return("Please upload a running spawner list.")
-      }
-    })
 
     # Running spawners calculation -------------------------------------
     if (!is.null(input$running_spawners)) {
@@ -476,23 +474,23 @@ server <- function(input, output, session) { # nolint
     output$download2 <- downloadHandler(
       filename = function() {
         paste0("running_spawners-", Sys.Date(), ".xlsx")
-        },
-        content = function(file) {
-          wb <- createWorkbook()
+      },
+      content = function(file) {
+        wb <- createWorkbook()
 
-          # Add a worksheet for the selected matrix
-          addWorksheet(wb, "cross-to-date report")
-          writeData(wb, sheet = "cross-to-date report", spawners, rowNames = TRUE)
+        # Add a worksheet for the selected matrix
+        addWorksheet(wb, "cross-to-date report")
+        writeData(wb, sheet = "cross-to-date report", spawners, rowNames = TRUE)
 
-          # Add a worksheet for the matrix
-          addWorksheet(wb, "cross counter")
-          writeData(wb, sheet = "cross counter", cross_counter, rowNames = TRUE)
-          
-          addWorksheet(wb, "Family counter")
-          writeData(wb, sheet = "Family counter", family_counter, rowNames = TRUE)
+        # Add a worksheet for the matrix
+        addWorksheet(wb, "cross counter")
+        writeData(wb, sheet = "cross counter", cross_counter, rowNames = TRUE)
 
-          # Save the workbook
-          saveWorkbook(wb, file, overwrite = TRUE)
+        addWorksheet(wb, "Family counter")
+        writeData(wb, sheet = "Family counter", family_counter, rowNames = TRUE)
+
+        # Save the workbook
+        saveWorkbook(wb, file, overwrite = TRUE)
       }
     )
   }) %>%
