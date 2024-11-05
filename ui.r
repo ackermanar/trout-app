@@ -40,6 +40,7 @@ ui <- fluidPage(
       h3("Export results"),
       downloadButton("download1", label = "Download"),
       br(),
+      br(),
       fileInput("running_spawners", "Optional: Upload running spawner list to track number of time each family has been used", accept = c(".csv", ".txt")),
       downloadButton("download2", label = "Download spawner list")
     ),
@@ -56,7 +57,10 @@ ui <- fluidPage(
         tabPanel("Running spawners",
           h5("User feedback for tracking running spawners:"),
           verbatimTextOutput("message3"),
-          DTOutput("spawner_table")
+          fluidRow(
+            column(6, DTOutput("cross_counter")),
+            column(6, DTOutput("family_counter"))
+          )
         )
       )
     )

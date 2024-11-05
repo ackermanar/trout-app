@@ -423,8 +423,26 @@ server <- function(input, output, session) { # nolint
           paste("Running spawners list uploaded successfully.")
         })
 
-        output$spawner_table <- renderDT({
-          datatable(spawners, rownames = FALSE)
+        output$cross_counter <- renderDT({
+          datatable(cross_counter, rownames = FALSE) %>%
+            formatStyle(
+              "count",
+              backgroundColor = styleInterval(
+                c(4, 3, 2, 1),
+              ),
+              c("coral", "orange", "yellow", "lightgreen")
+            )
+        })
+
+        output$family_counter <- renderDT({
+          datatable(family_counter, rownames = FALSE) %>%
+            formatStyle(
+              "count",
+              backgroundColor = styleInterval(
+                c(4, 8, 12),
+                c("lightgreen", "yellow", "orange", "coral")
+              )
+            )
         })
 
       }, error = function(e) {
