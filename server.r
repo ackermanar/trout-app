@@ -185,11 +185,13 @@ server <- function(input, output, session) { # nolint
               )
             )
         })
-        if(!is.null(results)) {
+
+        if (!is.null(results)) {
           output$message1 <- renderText({
             paste("Kinship matrix generated succesfully.")
           })
         }
+
       }, error = function(e) {
         output$message1 <- renderText({
           paste("Please inspect the pedigree file formatting, an error occurred:", e$message)
@@ -283,7 +285,7 @@ server <- function(input, output, session) { # nolint
         quadrants <- as_tibble(quantilesEBV) %>%
           column_to_rownames(var = "Data") %>%
           bind_rows(quadrants) %>%
-           rownames_to_column(var = "Data") %>%
+          rownames_to_column(var = "Data") %>%
           arrange(desc(Data == "Kinship"), Data) %>%
           column_to_rownames(var = "Data")
 
@@ -384,7 +386,7 @@ server <- function(input, output, session) { # nolint
         # read list of broodstock used
         spawners <- read.table(input$running_spawners$datapath, sep = "\t", header = T) %>%
           janitor::clean_names() %>%
-          select(c(1,2,4,7,8))
+          select(c(1, 2, 4, 7, 8))
 
         # pull info from previously updated ebv file and generate a full report
         spawners <- spawners %>%
@@ -428,8 +430,8 @@ server <- function(input, output, session) { # nolint
               "count",
               backgroundColor = styleInterval(
                 c(4, 3, 2, 1),
-              ),
-              c("coral", "orange", "yellow", "lightgreen")
+                c("coral", "orange", "yellow", "lightgreen")
+              )
             )
         })
 
