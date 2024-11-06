@@ -1,5 +1,5 @@
 # List of required packages
-required_packages <- c("shiny", "shinydashboard", "shinyjs", "DT", "kinship2", "openxlsx", "tidyverse")
+required_packages <- c("shiny", "shinydashboard", "shinyjs", "DT", "janitor", "kinship2", "openxlsx", "tidyverse")
 
 # Function to check and install missing packages
 install_if_missing <- function(package) {
@@ -16,6 +16,7 @@ library(shiny)
 library(shinydashboard)
 library(shinyjs)
 library(DT)
+library(janitor)
 library(kinship2)
 library(openxlsx)
 library(tidyverse)
