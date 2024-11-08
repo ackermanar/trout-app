@@ -389,8 +389,13 @@ server <- function(input, output, session) { # nolint
           janitor::clean_names() %>%
           select(c(1, 2, 4, 7, 8))
 
+        # Read in unsuccesful crosses
+        failed <- read_table(input$unsuccesful$datapath) %>%
+          pull(1)
+
         # pull info from previously updated ebv file and generate a full report
         spawners <- spawners %>%
+          filter(!(cross %in% failed)) %>%
           left_join(ebvs, by = c("female" = "last_four")) %>%
           rename(female_fam = family, female_tag = tag) %>%
           left_join(ebvs, by = c("male" = "last_four")) %>%
@@ -498,5 +503,5 @@ server <- function(input, output, session) { # nolint
       }
     )
   }) %>%
-    bindEvent(input$pedigree_file, input$candidate_file, input$thresh, input$download1, input$weight_file, input$weight1, input$length_file, input$weight2, input$running_spawners, input$download2)
+    bindEvent(input$pedigree_file, input$candidate_file, input$thresh, input$download1, input$weight_file, input$weight1, input$length_file, input$weight2, input$running_spawners, input$unsuccesful, input$download2)
 }

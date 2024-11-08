@@ -43,6 +43,7 @@ ui <- fluidPage(
       br(),
       br(),
       fileInput("running_spawners", "Optional: Upload running spawner list to track number of time each family has been used", accept = c(".csv", ".txt")),
+      fileInput("unsuccesful", "Optional: Upload unsuccessful spawner list to remove unsuccesful crosses", accept = c(".csv", ".txt")),
       downloadButton("download2", label = "Download spawner list")
     ),
     mainPanel(
