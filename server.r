@@ -374,7 +374,7 @@ server <- function(input, output, session) { # nolint
         })
       }) # End third tryCatch
     } # End EBV matrix calculation
-
+    
     # Running spawners calculation 
     if (!is.null(input$running_spawners)) {
       tryCatch({
