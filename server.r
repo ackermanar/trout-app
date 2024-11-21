@@ -375,7 +375,7 @@ server <- function(input, output, session) { # nolint
       }) # End third tryCatch
     } # End EBV matrix calculation
 
-    # Running spawners calculation -------------------------------------
+    # Running spawners calculation 
     if (!is.null(input$running_spawners)) {
       tryCatch({
         # read in ebv list (this is where the family and full ID will be pulled from)
@@ -385,27 +385,33 @@ server <- function(input, output, session) { # nolint
           mutate(last_four = str_sub(tag, -4, -1))
 
         # read list of broodstock used
-        spawners <- read.table(input$running_spawners$datapath, sep = "\t", header = T) %>%
+        spawners_orig <- read.table(input$running_spawners$datapath, sep = "\t", header = T) %>%
           janitor::clean_names() %>%
           select(c(1, 2, 4, 7, 8))
 
         # Read in unsuccesful crosses
-        failed <- read_table(input$unsuccesful$datapath) %>%
+        failed <- read.table(input$unsuccesful$datapath, header = T)  %>%
           pull(1)
 
         # pull info from previously updated ebv file and generate a full report
-        spawners <- spawners %>%
-          filter(!(cross %in% failed)) %>%
+        spawners <- spawners_orig %>%
           left_join(ebvs, by = c("female" = "last_four")) %>%
           rename(female_fam = family, female_tag = tag) %>%
           left_join(ebvs, by = c("male" = "last_four")) %>%
-          rename(male_fam = family, male_tag = tag,`2024_cross` = cross) %>%
-          mutate(date = as.Date(date, format = "%m/%d/%y")) %>%
-          select(c(4, 1, 6, 7, 8, 9, 5)) %>%
-          arrange(date)
+          rename(male_fam = family, male_tag = tag, cross_number = cross) %>%
+          mutate(
+            date = as.Date(date, format = "%m/%d/%y"),
+            notes = ifelse(cross_number %in% failed, "cross was culled", notes)) %>%
+          select(4, 1, 6, 7, 8, 9, 5) %>%
+          arrange(date)  # Sort by date 
+        
+        # Filter out unsuccessful crosses to generate processed list
+        spawners_2_process <- spawners %>%
+          filter(!(cross_number %in% failed))
 
         # count how many times each cross between families (regardless of reciprocals) has been made
-        cross_counter <- spawners %>%
+        cross_counter <- spawners_2_process %>%
+          filter(!(cross_number %in% failed)) %>%
           mutate(
             cross_id = ifelse(
               as.numeric(gsub("CX-", "", female_fam)) < as.numeric(gsub("CX-", "", male_fam)),
@@ -414,16 +420,16 @@ server <- function(input, output, session) { # nolint
             )
           ) %>%
           group_by(cross_id) %>%
-          summarise(count = n(), .groups = "drop") %>%
+          summarise(count = n(), .groups = 'drop') %>%
           arrange(desc(count))
 
         # count how many times each family has been used regardless of male and female
         family_counter <- as.data.frame(rbind(
-          data.frame(family = spawners$male_fam),
-          data.frame(family = spawners$female_fam)
+          data.frame(family = spawners_2_process$male_fam),
+          data.frame(family = spawners_2_process$female_fam)
         )) %>%
-          group_by(family) %>%  # Correctly referencing the column name
-          summarise(count = n(), .groups = "drop") %>%
+          group_by(family) %>% 
+          summarise(count = n(), .groups = 'drop') %>%
           arrange(desc(count))
 
         output$message3 <- renderText({
