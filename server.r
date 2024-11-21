@@ -361,7 +361,7 @@ server <- function(input, output, session) { # nolint
 
         if (testTot != 1 && !is.null(ebv_matrix)) {
           output$message2 <- renderText({
-            paste("Warning: EBV weights are not equal to 1, current value:", testTot)
+            paste("Warning: EBV relativeweights are not equal to 1, current value:", testTot)
           })
         } else if (!is.null(ebv_matrix) && testTot == 1) {
           output$message2 <- renderText({
